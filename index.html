@@ -1,0 +1,2282 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#4f46e5" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="代購記帳本" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%234f46e5'/%3E%3Cpath d='M160 192h192l24 208a24 24 0 0 1-24 26H160a24 24 0 0 1-24-26l24-208z' fill='none' stroke='%23ffffff' stroke-width='28' stroke-linejoin='round'/%3E%3Cpath d='M204 192v-28a52 52 0 0 1 104 0v28' fill='none' stroke='%23ffffff' stroke-width='28' stroke-linecap='round'/%3E%3Crect x='204' y='268' width='16' height='76' rx='6' fill='%23ffffff'/%3E%3Crect x='236' y='268' width='10' height='76' rx='5' fill='%23ffffff'/%3E%3Crect x='260' y='268' width='20' height='76' rx='6' fill='%23ffffff'/%3E%3Crect x='294' y='268' width='14' height='76' rx='5' fill='%23ffffff'/%3E%3C/svg%3E" />
+  <title>代購採買記帳本 | 海外代購品項、稅額折扣與地點紀錄</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+      overscroll-behavior-y: contain;
+      -webkit-tap-highlight-color: transparent;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Top Navigation -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+          <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-base sm:text-lg font-bold text-slate-900 truncate leading-tight">代購採買記帳本</h1>
+          <p class="text-xs text-slate-500 hidden sm:block truncate">海外品項・國際編碼・稅前稅後折扣試算・購買地點記憶</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex items-center bg-slate-100 p-1 rounded-xl shrink-0" role="tablist">
+        <button id="tab-record" data-tab="record" class="tab-btn px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 bg-white text-indigo-700 shadow-sm">
+          <i data-lucide="calculator" class="w-4 h-4"></i>
+          <span>紀錄與試算</span>
+        </button>
+        <button id="tab-locations" data-tab="locations" class="tab-btn px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+          <i data-lucide="map-pin" class="w-4 h-4"></i>
+          <span>地點記憶庫</span>
+          <span id="nav-loc-count" class="ml-0.5 px-1.5 py-0.5 text-[11px] rounded-full bg-slate-200 text-slate-700 tabular-nums">0</span>
+        </button>
+        <button id="tab-analytics" data-tab="analytics" class="tab-btn px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">統計與匯出</span>
+          <span class="sm:hidden">匯出</span>
+        </button>
+      </nav>
+      <button id="btn-install-pwa" type="button" class="hidden px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition items-center gap-1.5 shrink-0 shadow-sm">
+        <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+        <span>安裝 App</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Sample Data Banner (shown only when sample records exist) -->
+  <div id="sample-banner" class="hidden bg-indigo-50 border-b border-indigo-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm text-indigo-800">
+      <div class="flex items-center gap-2">
+        <i data-lucide="sparkles" class="w-4 h-4 text-indigo-600 shrink-0"></i>
+        <span>目前已載入範例採買紀錄與地點供您試用體驗，您可直接新增資料或一鍵清除範例。</span>
+      </div>
+      <button id="btn-clear-samples" class="px-3 py-1 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition-colors shrink-0">
+        清除範例開始記帳
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-5 sm:py-6 space-y-5">
+
+    <!-- Top KPI Strip -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <div class="flex items-center justify-between text-xs font-medium text-slate-500">
+          <span>已紀錄品項 / 總件數</span>
+          <i data-lucide="package" class="w-4 h-4 text-indigo-500"></i>
+        </div>
+        <div class="mt-2 flex items-baseline gap-1.5">
+          <span id="kpi-items" class="text-xl sm:text-2xl font-bold text-slate-900 tabular-nums">0</span>
+          <span class="text-xs text-slate-500">筆 / <span id="kpi-qty" class="font-semibold text-slate-700 tabular-nums">0</span> 件</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <div class="flex items-center justify-between text-xs font-medium text-slate-500">
+          <span>折扣後・未稅總計 (約台幣)</span>
+          <i data-lucide="receipt" class="w-4 h-4 text-emerald-500"></i>
+        </div>
+        <div class="mt-2 flex items-baseline gap-1">
+          <span class="text-xs font-semibold text-slate-400">NT$</span>
+          <span id="kpi-post-pretax-twd" class="text-xl sm:text-2xl font-bold text-emerald-700 tabular-nums">0</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <div class="flex items-center justify-between text-xs font-medium text-slate-500">
+          <span>折扣後・含稅總計 (約台幣)</span>
+          <i data-lucide="wallet" class="w-4 h-4 text-indigo-500"></i>
+        </div>
+        <div class="mt-2 flex items-baseline gap-1">
+          <span class="text-xs font-semibold text-slate-400">NT$</span>
+          <span id="kpi-post-posttax-twd" class="text-xl sm:text-2xl font-bold text-slate-900 tabular-nums">0</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <div class="flex items-center justify-between text-xs font-medium text-slate-500">
+          <span>累計折扣省下 (約台幣)</span>
+          <i data-lucide="tag" class="w-4 h-4 text-amber-500"></i>
+        </div>
+        <div class="mt-2 flex items-baseline gap-1">
+          <span class="text-xs font-semibold text-slate-400">NT$</span>
+          <span id="kpi-discount-saved-twd" class="text-xl sm:text-2xl font-bold text-amber-600 tabular-nums">0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 1: RECORD & CALCULATE -->
+    <section id="view-record" class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+      <!-- Left Column: Form + Live 4-Way Calculator -->
+      <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+          <div class="flex items-center gap-2">
+            <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-600"></i>
+            <h2 id="form-heading" class="text-base font-bold text-slate-900">新增代購品項</h2>
+          </div>
+          <button id="btn-reset-form" type="button" class="text-xs font-medium text-slate-500 hover:text-slate-800 flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-slate-200/60 transition-colors">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+            <span>重設表單</span>
+          </button>
+        </div>
+
+        <form id="item-form" class="p-5 space-y-4">
+          <input type="hidden" id="edit-id" value="" />
+
+          <!-- Product Info -->
+          <div class="space-y-3">
+            <div>
+              <label for="input-name" class="block text-xs font-semibold text-slate-700 mb-1">
+                品項名稱 <span class="text-rose-500">*</span>
+              </label>
+              <input id="input-name" type="text" required placeholder="例如：合利他命 EX Plus 270錠、吹風機 NA0J"
+                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="sm:col-span-2">
+                <div class="flex items-center justify-between mb-1 gap-1">
+                  <label for="input-barcode" class="text-xs font-semibold text-slate-700">國際編碼 (JAN / EAN / UPC)</label>
+                  <span id="barcode-badge" class="text-[11px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">支援鏡頭 / 掃碼槍</span>
+                </div>
+                <div class="flex gap-1.5">
+                  <div class="relative flex-1 min-w-0">
+                    <i data-lucide="barcode" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    <input id="input-barcode" type="text" inputmode="numeric" placeholder="例如：4987123145428"
+                      class="w-full pl-9 pr-2.5 py-2.5 text-sm font-mono rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition" />
+                  </div>
+                  <button type="button" id="btn-open-scanner" title="開啟手機鏡頭即時掃描條碼"
+                    class="px-2.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold transition flex items-center gap-1 shrink-0">
+                    <i data-lucide="scan-barcode" class="w-4 h-4"></i>
+                    <span>掃碼</span>
+                  </button>
+                  <button type="button" id="btn-scan-photo" title="拍照或上傳條碼圖片辨識"
+                    class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-semibold transition flex items-center gap-1 shrink-0">
+                    <i data-lucide="image-plus" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">拍圖</span>
+                  </button>
+                  <input id="input-barcode-photo" type="file" accept="image/*" capture="environment" class="hidden" />
+                </div>
+              </div>
+
+              <div>
+                <label for="input-qty" class="block text-xs font-semibold text-slate-700 mb-1">數量</label>
+                <div class="flex items-center border border-slate-300 rounded-xl overflow-hidden bg-white">
+                  <button type="button" id="btn-qty-minus" class="px-2.5 py-2.5 text-slate-600 hover:bg-slate-100 transition" aria-label="減少數量">
+                    <i data-lucide="minus" class="w-4 h-4"></i>
+                  </button>
+                  <input id="input-qty" type="number" min="1" step="1" value="1"
+                    class="w-full text-center text-sm font-semibold py-2 outline-none tabular-nums" />
+                  <button type="button" id="btn-qty-plus" class="px-2.5 py-2.5 text-slate-600 hover:bg-slate-100 transition" aria-label="增加數量">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Price, Currency, Tax & Discount -->
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <i data-lucide="coins" class="w-4 h-4 text-indigo-600"></i>
+                價格、稅率與折扣設定
+              </span>
+              <div class="inline-flex rounded-lg bg-slate-200/70 p-0.5 text-[11px] font-semibold">
+                <button type="button" id="mode-tax-excl" data-mode="tax_excluded" class="price-mode-btn px-2.5 py-1 rounded-md bg-white text-indigo-700 shadow-sm transition">輸入未稅價</button>
+                <button type="button" id="mode-tax-incl" data-mode="tax_included" class="price-mode-btn px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition">輸入含稅價</button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-12 gap-2.5">
+              <div class="col-span-4">
+                <label for="input-currency" class="block text-[11px] font-semibold text-slate-600 mb-1">幣別</label>
+                <select id="input-currency" class="w-full px-2.5 py-2 text-sm font-medium rounded-xl border border-slate-300 bg-white focus:border-indigo-500 outline-none">
+                  <option value="JPY">JPY 日圓</option>
+                  <option value="KRW">KRW 韓元</option>
+                  <option value="USD">USD 美元</option>
+                  <option value="EUR">EUR 歐元</option>
+                  <option value="GBP">GBP 英鎊</option>
+                  <option value="THB">THB 泰銖</option>
+                  <option value="TWD">TWD 台幣</option>
+                </select>
+              </div>
+              <div class="col-span-5">
+                <label for="input-price" class="block text-[11px] font-semibold text-slate-600 mb-1">
+                  單價 (<span id="price-mode-label">未稅</span>) <span class="text-rose-500">*</span>
+                </label>
+                <input id="input-price" type="number" min="0" step="any" required placeholder="0"
+                  class="w-full px-3 py-2 text-sm font-semibold rounded-xl border border-slate-300 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none tabular-nums" />
+              </div>
+              <div class="col-span-3">
+                <label for="input-rate" class="block text-[11px] font-semibold text-slate-600 mb-1">對台幣匯率</label>
+                <input id="input-rate" type="number" min="0" step="any" value="0.215"
+                  class="w-full px-2.5 py-2 text-sm rounded-xl border border-slate-300 bg-white focus:border-indigo-500 outline-none tabular-nums" />
+              </div>
+            </div>
+
+            <!-- Tax Rate -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label for="input-tax" class="text-[11px] font-semibold text-slate-600">消費稅 / 增值稅率 (%)</label>
+                <div class="flex items-center gap-1">
+                  <button type="button" data-tax="0" class="quick-tax px-2 py-0.5 text-[11px] rounded-md bg-white border border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-700 transition">0%免稅</button>
+                  <button type="button" data-tax="8" class="quick-tax px-2 py-0.5 text-[11px] rounded-md bg-white border border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-700 transition">8%</button>
+                  <button type="button" data-tax="10" class="quick-tax px-2 py-0.5 text-[11px] rounded-md bg-indigo-50 border border-indigo-300 text-indigo-700 font-semibold transition">10%</button>
+                  <button type="button" data-tax="20" class="quick-tax px-2 py-0.5 text-[11px] rounded-md bg-white border border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-700 transition">20%</button>
+                </div>
+              </div>
+              <input id="input-tax" type="number" min="0" max="100" step="0.1" value="10"
+                class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white focus:border-indigo-500 outline-none tabular-nums" />
+            </div>
+
+            <!-- Discount -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label for="input-discount" class="text-[11px] font-semibold text-slate-600">折扣設定</label>
+                <div class="flex items-center gap-1 flex-wrap justify-end">
+                  <button type="button" data-disc="0" class="quick-disc px-2 py-0.5 text-[11px] rounded-md bg-indigo-50 border border-indigo-300 text-indigo-700 font-semibold transition">無</button>
+                  <button type="button" data-disc="5" class="quick-disc px-2 py-0.5 text-[11px] rounded-md bg-white border border-slate-200 text-slate-600 hover:border-indigo-400 transition">95折</button>
+                  <button type="button" data-disc="7" class="quick-disc px-2 py-0.5 text-[11px] rounded-md bg-white border border-slate-200 text-slate-600 hover:border-indigo-400 transition">93折</button>
+                  <button type="button" data-disc="10" class="quick-disc px-2 py-0.5 text-[11px] rounded-md bg-white border border-slate-200 text-slate-600 hover:border-indigo-400 transition">9折</button>
+                  <button type="button" data-disc="20" class="quick-disc px-2 py-0.5 text-[11px] rounded-md bg-white border border-slate-200 text-slate-600 hover:border-indigo-400 transition">8折</button>
+                </div>
+              </div>
+              <div class="grid grid-cols-12 gap-2">
+                <div class="col-span-5">
+                  <select id="input-discount-type" class="w-full px-2.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-300 bg-white focus:border-indigo-500 outline-none">
+                    <option value="percent">百分比折扣 (% off)</option>
+                    <option value="fixed">單件折抵金額</option>
+                  </select>
+                </div>
+                <div class="col-span-4">
+                  <input id="input-discount" type="number" min="0" step="any" value="0" placeholder="0"
+                    class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white focus:border-indigo-500 outline-none tabular-nums" />
+                </div>
+                <div class="col-span-3">
+                  <select id="input-discount-order" title="固定金額折抵順序" class="w-full px-2 py-2 text-xs rounded-xl border border-slate-300 bg-white focus:border-indigo-500 outline-none">
+                    <option value="before_tax">稅前折</option>
+                    <option value="after_tax">稅後折</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live 4-Way Price Breakdown -->
+            <div class="pt-2 border-t border-slate-200/80 space-y-2">
+              <div class="flex items-center justify-between text-[11px] font-bold text-slate-500">
+                <span>即時試算結果 (含數量 ×<span id="calc-qty-badge" class="tabular-nums">1</span>)</span>
+                <span id="calc-saving-pill" class="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full hidden"></span>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div class="bg-white rounded-xl p-2.5 border border-slate-200">
+                  <div class="text-[11px] text-slate-500">折扣前・未稅</div>
+                  <div id="calc-pre-pretax" class="text-sm font-bold text-slate-700 tabular-nums mt-0.5">¥0</div>
+                  <div id="calc-pre-pretax-twd" class="text-[11px] text-slate-400 tabular-nums">≈ NT$0</div>
+                </div>
+                <div class="bg-white rounded-xl p-2.5 border border-slate-200">
+                  <div class="text-[11px] text-slate-500">折扣前・含稅</div>
+                  <div id="calc-pre-posttax" class="text-sm font-bold text-slate-700 tabular-nums mt-0.5">¥0</div>
+                  <div id="calc-pre-posttax-twd" class="text-[11px] text-slate-400 tabular-nums">≈ NT$0</div>
+                </div>
+                <div class="bg-emerald-50/70 rounded-xl p-2.5 border border-emerald-200">
+                  <div class="text-[11px] font-semibold text-emerald-700 flex items-center justify-between">
+                    <span>折扣後・未稅</span>
+                    <span class="text-[10px] bg-emerald-100 px-1.5 rounded">退稅價</span>
+                  </div>
+                  <div id="calc-post-pretax" class="text-base font-bold text-emerald-800 tabular-nums mt-0.5">¥0</div>
+                  <div id="calc-post-pretax-twd" class="text-[11px] text-emerald-700/80 tabular-nums">≈ NT$0</div>
+                </div>
+                <div class="bg-indigo-50/70 rounded-xl p-2.5 border border-indigo-200">
+                  <div class="text-[11px] font-semibold text-indigo-700 flex items-center justify-between">
+                    <span>折扣後・含稅</span>
+                    <span class="text-[10px] bg-indigo-100 px-1.5 rounded">實付價</span>
+                  </div>
+                  <div id="calc-post-posttax" class="text-base font-bold text-indigo-900 tabular-nums mt-0.5">¥0</div>
+                  <div id="calc-post-posttax-twd" class="text-[11px] text-indigo-700/80 tabular-nums">≈ NT$0</div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between text-[11px] text-slate-500 px-1">
+                <span>單件折後含稅：<strong id="calc-unit-final" class="text-slate-700 tabular-nums">¥0</strong></span>
+                <span>稅額差額：<strong id="calc-tax-diff" class="text-slate-700 tabular-nums">¥0</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Location Recording & Memory -->
+          <div class="p-3.5 rounded-2xl bg-amber-50/50 border border-amber-200/70 space-y-3">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                <i data-lucide="map-pin" class="w-4 h-4 text-amber-600"></i>
+                購買地點與位置紀錄
+              </span>
+              <button type="button" id="btn-get-gps" class="px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-amber-800 text-xs font-semibold hover:bg-amber-100 transition flex items-center gap-1 shadow-xs">
+                <i data-lucide="locate-fixed" class="w-3.5 h-3.5"></i>
+                <span>取得目前定位</span>
+              </button>
+            </div>
+
+            <!-- Saved Location Quick Chips -->
+            <div id="quick-locations-wrap" class="space-y-1">
+              <div class="text-[11px] font-medium text-amber-800/80">快速套用已記憶地點：</div>
+              <div id="quick-locations-list" class="flex flex-wrap gap-1.5"></div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label for="input-loc-name" class="block text-[11px] font-semibold text-slate-700 mb-1">店家 / 地點名稱</label>
+                <input id="input-loc-name" type="text" placeholder="例如：松本清 新宿東口店"
+                  class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white focus:border-amber-500 outline-none" />
+              </div>
+              <div>
+                <label for="input-loc-address" class="block text-[11px] font-semibold text-slate-700 mb-1">城市 / 區域 / 地址</label>
+                <input id="input-loc-address" type="text" placeholder="例如：東京新宿區"
+                  class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white focus:border-amber-500 outline-none" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label for="input-lat" class="block text-[11px] font-medium text-slate-600 mb-1">緯度 (Lat，選填)</label>
+                <input id="input-lat" type="number" step="any" placeholder="例：35.6938"
+                  class="w-full px-3 py-1.5 text-xs font-mono rounded-lg border border-slate-300 bg-white focus:border-amber-500 outline-none tabular-nums" />
+              </div>
+              <div>
+                <label for="input-lng" class="block text-[11px] font-medium text-slate-600 mb-1">經度 (Lng，選填)</label>
+                <input id="input-lng" type="number" step="any" placeholder="例：139.7034"
+                  class="w-full px-3 py-1.5 text-xs font-mono rounded-lg border border-slate-300 bg-white focus:border-amber-500 outline-none tabular-nums" />
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-2 pt-0.5">
+              <label class="inline-flex items-center gap-2 text-xs text-slate-700 cursor-pointer select-none">
+                <input id="input-remember-loc" type="checkbox" checked class="w-4 h-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500" />
+                <span>自動記憶此購買地點到地點庫</span>
+              </label>
+              <span id="gps-status" class="text-[11px] text-amber-700"></span>
+            </div>
+          </div>
+
+          <!-- Note -->
+          <div>
+            <label for="input-note" class="block text-xs font-semibold text-slate-700 mb-1">備註 / 委託人 / 規格</label>
+            <input id="input-note" type="text" placeholder="例如：王小姐指定、白色款、護照免稅櫃檯結帳"
+              class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 focus:border-indigo-500 outline-none" />
+          </div>
+
+          <!-- Submit Button -->
+          <div class="flex items-center gap-2 pt-1">
+            <button type="submit" id="btn-submit-item" class="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow-sm transition flex items-center justify-center gap-2">
+              <i data-lucide="save" class="w-4 h-4"></i>
+              <span id="btn-submit-text">儲存此筆代購紀錄</span>
+            </button>
+            <button type="button" id="btn-cancel-edit" class="hidden py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition">
+              取消編輯
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Right Column: Recorded Items List -->
+      <div class="lg:col-span-7 space-y-4">
+        <!-- Search & Filters -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
+          <div class="flex flex-col sm:flex-row gap-2.5">
+            <div class="relative flex-1">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+              <input id="filter-search" type="text" placeholder="搜尋品項名稱、國際編碼、店家或備註..."
+                class="w-full pl-10 pr-3.5 py-2 text-sm rounded-xl border border-slate-300 focus:border-indigo-500 outline-none" />
+            </div>
+            <div class="flex gap-2">
+              <select id="filter-location" class="flex-1 sm:w-40 px-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-300 bg-white focus:border-indigo-500 outline-none">
+                <option value="">全部購買地點</option>
+              </select>
+              <select id="filter-currency" class="w-28 px-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-300 bg-white focus:border-indigo-500 outline-none">
+                <option value="">全部幣別</option>
+                <option value="JPY">JPY</option>
+                <option value="KRW">KRW</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+                <option value="THB">THB</option>
+                <option value="TWD">TWD</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+            <div>
+              顯示 <strong id="list-shown-count" class="text-slate-800 tabular-nums">0</strong> 筆紀錄
+              <button id="btn-clear-filters" class="hidden ml-2 text-indigo-600 hover:underline font-medium">清除篩選</button>
+            </div>
+            <div class="flex items-center gap-2">
+              <label for="filter-sort" class="text-slate-500">排序：</label>
+              <select id="filter-sort" class="px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 font-medium outline-none">
+                <option value="newest">最新建立</option>
+                <option value="price_desc">實付台幣 (高→低)</option>
+                <option value="price_asc">實付台幣 (低→高)</option>
+                <option value="location">依購買地點</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Items Container -->
+        <div id="items-list" class="space-y-3"></div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: SAVED LOCATIONS MEMORY BANK -->
+    <section id="view-locations" class="hidden space-y-5">
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="map-pinned" class="w-5 h-5 text-amber-600"></i>
+              購買地點記憶庫
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">儲存常逛的海外藥妝店、百貨、Outlet 與 GPS 座標，記帳時可一鍵套用並查詢各店採買明細。</p>
+          </div>
+          <button id="btn-toggle-add-loc" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 self-start sm:self-auto">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>新增常去地點</span>
+          </button>
+        </div>
+
+        <!-- Collapsible Add Location Form -->
+        <form id="location-form" class="hidden mb-5 p-4 rounded-xl bg-amber-50/70 border border-amber-200 space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label for="new-loc-name" class="block text-xs font-semibold text-slate-700 mb-1">店家 / 地點名稱 *</label>
+              <input id="new-loc-name" type="text" required placeholder="例如：唐吉訶德 道頓堀店" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white outline-none focus:border-amber-500" />
+            </div>
+            <div>
+              <label for="new-loc-address" class="block text-xs font-semibold text-slate-700 mb-1">城市 / 地址備註</label>
+              <input id="new-loc-address" type="text" placeholder="例如：大阪市中央區宗右衛門町" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white outline-none focus:border-amber-500" />
+            </div>
+            <div>
+              <label for="new-loc-currency" class="block text-xs font-semibold text-slate-700 mb-1">預設幣別 / 稅率</label>
+              <div class="flex gap-2">
+                <select id="new-loc-currency" class="flex-1 px-2.5 py-2 text-sm rounded-xl border border-slate-300 bg-white outline-none">
+                  <option value="JPY">JPY</option>
+                  <option value="KRW">KRW</option>
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="GBP">GBP</option>
+                  <option value="THB">THB</option>
+                  <option value="TWD">TWD</option>
+                </select>
+                <input id="new-loc-tax" type="number" min="0" max="100" step="0.1" value="10" placeholder="稅%" class="w-20 px-2.5 py-2 text-sm rounded-xl border border-slate-300 bg-white outline-none tabular-nums" />
+              </div>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            <div>
+              <label for="new-loc-lat" class="block text-xs font-semibold text-slate-700 mb-1">緯度 (選填)</label>
+              <input id="new-loc-lat" type="number" step="any" placeholder="34.6694" class="w-full px-3 py-2 text-sm font-mono rounded-xl border border-slate-300 bg-white outline-none" />
+            </div>
+            <div>
+              <label for="new-loc-lng" class="block text-xs font-semibold text-slate-700 mb-1">經度 (選填)</label>
+              <input id="new-loc-lng" type="number" step="any" placeholder="135.5023" class="w-full px-3 py-2 text-sm font-mono rounded-xl border border-slate-300 bg-white outline-none" />
+            </div>
+            <div class="flex gap-2">
+              <button type="button" id="btn-new-loc-gps" class="px-3 py-2 rounded-xl bg-white border border-amber-300 text-amber-800 text-xs font-semibold hover:bg-amber-100 transition flex items-center gap-1">
+                <i data-lucide="locate-fixed" class="w-3.5 h-3.5"></i>
+                <span>抓目前定位</span>
+              </button>
+              <button type="submit" class="flex-1 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold transition">
+                儲存地點
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Saved Locations Grid -->
+        <div id="locations-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: ANALYTICS & EXPORT -->
+    <section id="view-analytics" class="hidden space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <!-- Breakdown by Location -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <h3 class="text-base font-bold text-slate-900 flex items-center gap-2 mb-4">
+            <i data-lucide="store" class="w-5 h-5 text-amber-600"></i>
+            各購買地點採買統計
+          </h3>
+          <div id="analytics-by-location" class="space-y-3"></div>
+        </div>
+
+        <!-- Breakdown by Currency -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <h3 class="text-base font-bold text-slate-900 flex items-center gap-2 mb-4">
+            <i data-lucide="globe" class="w-5 h-5 text-indigo-600"></i>
+            各幣別稅前・稅後・折扣彙總
+          </h3>
+          <div id="analytics-by-currency" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <!-- Export & Data Management -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2 mb-1">
+          <i data-lucide="database" class="w-5 h-5 text-emerald-600"></i>
+          報表匯出與資料備份
+        </h3>
+        <p class="text-xs text-slate-500 mb-4">資料皆自動儲存在您的瀏覽器本機空間。您可隨時匯出 CSV 報表（支援 Excel 直接開啟不亂碼）或 JSON 完整備份檔。</p>
+        <div class="flex flex-wrap gap-3">
+          <button id="btn-export-csv" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition flex items-center gap-2 shadow-sm">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+            <span>匯出 CSV 採買明細表</span>
+          </button>
+          <button id="btn-export-json" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold transition flex items-center gap-2 shadow-sm">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>下載 JSON 備份檔</span>
+          </button>
+          <label class="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-sm font-semibold transition flex items-center gap-2 cursor-pointer">
+            <i data-lucide="upload" class="w-4 h-4"></i>
+            <span>匯入 JSON 備份</span>
+            <input id="input-import-json" type="file" accept=".json" class="hidden" />
+          </label>
+          <button id="btn-clear-all" class="px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-sm font-semibold transition flex items-center gap-2 ml-auto">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            <span>清空所有資料</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- In-Page Barcode Scanner Modal -->
+  <div id="scanner-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-200">
+      <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+            <i data-lucide="scan-barcode" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">鏡頭即時掃描國際編碼</h3>
+            <p class="text-[11px] text-slate-500">支援 JAN / EAN-13 / EAN-8 / UPC-A / CODE-128</p>
+          </div>
+        </div>
+        <button type="button" id="btn-close-scanner-x" aria-label="關閉掃描視窗"
+          class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-4 space-y-3">
+        <div class="relative rounded-xl overflow-hidden bg-slate-950 min-h-[240px] flex items-center justify-center">
+          <div id="barcode-reader" class="w-full"></div>
+          <div id="scanner-fallback-overlay" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-5 bg-slate-900/95 text-white space-y-2.5">
+            <div class="w-11 h-11 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center">
+              <i data-lucide="camera-off" class="w-5 h-5"></i>
+            </div>
+            <div class="text-sm font-bold">無法開啟即時鏡頭</div>
+            <p id="scanner-error-detail" class="text-xs text-slate-300 leading-relaxed">目前瀏覽器或預覽環境未授權相機存取。您可以直接使用下方「拍照／上傳條碼圖片」進行辨識。</p>
+          </div>
+        </div>
+
+        <div id="scanner-status" class="text-xs text-center font-medium text-slate-600 bg-slate-50 rounded-xl px-3 py-2 border border-slate-200/80">
+          準備啟動鏡頭中...
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 pt-1">
+          <button type="button" id="btn-switch-camera"
+            class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5">
+            <i data-lucide="switch-camera" class="w-4 h-4"></i>
+            <span>切換鏡頭</span>
+          </button>
+          <button type="button" id="btn-modal-upload-photo"
+            class="flex-1 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition flex items-center justify-center gap-1.5">
+            <i data-lucide="image-plus" class="w-4 h-4"></i>
+            <span>改用拍照／上傳條碼圖片</span>
+          </button>
+          <button type="button" id="btn-close-scanner"
+            class="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold transition">
+            關閉
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="barcode-file-reader" class="hidden"></div>
+
+  <!-- In-Page Confirmation Modal -->
+  <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl border border-slate-200 space-y-4">
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 id="modal-title" class="text-base font-bold text-slate-900">確認操作</h3>
+          <p id="modal-desc" class="text-sm text-slate-600 mt-1">確定要執行此操作嗎？</p>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="modal-cancel" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition">取消</button>
+        <button id="modal-confirm" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold transition">確認</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const STORAGE_KEY_ITEMS = 'daigou_tracker_items_v1';
+      const STORAGE_KEY_LOCATIONS = 'daigou_tracker_locations_v1';
+      const STORAGE_KEY_RATES = 'daigou_tracker_rates_v1';
+
+      const CURRENCY_META = {
+        JPY: { symbol: '¥', defaultRate: 0.215, decimals: 0, label: '日圓' },
+        KRW: { symbol: '₩', defaultRate: 0.0235, decimals: 0, label: '韓元' },
+        USD: { symbol: '$', defaultRate: 32.5, decimals: 2, label: '美元' },
+        EUR: { symbol: '€', defaultRate: 34.8, decimals: 2, label: '歐元' },
+        GBP: { symbol: '£', defaultRate: 41.2, decimals: 2, label: '英鎊' },
+        THB: { symbol: '฿', defaultRate: 0.94, decimals: 2, label: '泰銖' },
+        TWD: { symbol: 'NT$', defaultRate: 1, decimals: 0, label: '台幣' }
+      };
+
+      const SAMPLE_LOCATIONS = [
+        {
+          id: 'loc-sample-1',
+          name: '唐吉訶德 新宿歌舞伎町店',
+          address: '日本東京都新宿區歌舞伎町',
+          lat: 35.6938,
+          lng: 139.7016,
+          defaultCurrency: 'JPY',
+          defaultTax: 10,
+          isSample: true
+        },
+        {
+          id: 'loc-sample-2',
+          name: 'Olive Young 明洞旗艦店',
+          address: '韓國首爾特別市中區明洞',
+          lat: 37.5641,
+          lng: 126.9852,
+          defaultCurrency: 'KRW',
+          defaultTax: 10,
+          isSample: true
+        },
+        {
+          id: 'loc-sample-3',
+          name: '松本清 銀座旗艦店',
+          address: '日本東京都中央區銀座',
+          lat: 35.6717,
+          lng: 139.7649,
+          defaultCurrency: 'JPY',
+          defaultTax: 8,
+          isSample: true
+        }
+      ];
+
+      const SAMPLE_ITEMS = [
+        {
+          id: 'item-sample-1',
+          name: '合利他命 EX Plus 270錠 (範例)',
+          barcode: '4987123145428',
+          qty: 2,
+          currency: 'JPY',
+          exchangeRate: 0.215,
+          inputPrice: 5980,
+          priceMode: 'tax_excluded',
+          taxRate: 10,
+          discountType: 'percent',
+          discountValue: 7,
+          discountOrder: 'before_tax',
+          locationName: '唐吉訶德 新宿歌舞伎町店',
+          locationAddress: '日本東京都新宿區歌舞伎町',
+          lat: 35.6938,
+          lng: 139.7016,
+          note: '出示優惠券 93 折 + 免稅參考',
+          createdAt: Date.now() - 7200000,
+          isSample: true
+        },
+        {
+          id: 'item-sample-2',
+          name: 'Torriden 玻尿酸保濕精華 50ml 雙入組 (範例)',
+          barcode: '8809784600152',
+          qty: 3,
+          currency: 'KRW',
+          exchangeRate: 0.0235,
+          inputPrice: 36000,
+          priceMode: 'tax_included',
+          taxRate: 10,
+          discountType: 'percent',
+          discountValue: 15,
+          discountOrder: 'before_tax',
+          locationName: 'Olive Young 明洞旗艦店',
+          locationAddress: '韓國首爾特別市中區明洞',
+          lat: 37.5641,
+          lng: 126.9852,
+          note: '現場特惠 85 折，含稅標價',
+          createdAt: Date.now() - 3600000,
+          isSample: true
+        },
+        {
+          id: 'item-sample-3',
+          name: '明治膠原蛋白粉 補充包 28日份 (範例)',
+          barcode: '4902777307206',
+          qty: 4,
+          currency: 'JPY',
+          exchangeRate: 0.215,
+          inputPrice: 1980,
+          priceMode: 'tax_excluded',
+          taxRate: 8,
+          discountType: 'percent',
+          discountValue: 5,
+          discountOrder: 'before_tax',
+          locationName: '松本清 銀座旗艦店',
+          locationAddress: '日本東京都中央區銀座',
+          lat: 35.6717,
+          lng: 139.7649,
+          note: '食品類 8% 稅率',
+          createdAt: Date.now() - 1800000,
+          isSample: true
+        }
+      ];
+
+      // App State
+      let state = {
+        activeTab: 'record',
+        priceMode: 'tax_excluded',
+        items: [],
+        locations: [],
+        rates: {},
+        filters: {
+          search: '',
+          location: '',
+          currency: '',
+          sort: 'newest'
+        },
+        pendingConfirmAction: null
+      };
+
+      // Safe localStorage helpers
+      function storageGet(key) {
+        try {
+          const raw = window.localStorage.getItem(key);
+          return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function storageSet(key, val) {
+        try {
+          window.localStorage.setItem(key, JSON.stringify(val));
+        } catch (e) {
+          // Ignore storage quota / iframe restrictions
+        }
+      }
+
+      function initState() {
+        const savedItems = storageGet(STORAGE_KEY_ITEMS);
+        const savedLocs = storageGet(STORAGE_KEY_LOCATIONS);
+        const savedRates = storageGet(STORAGE_KEY_RATES);
+
+        state.items = Array.isArray(savedItems) ? savedItems : SAMPLE_ITEMS.slice();
+        state.locations = Array.isArray(savedLocs) ? savedLocs : SAMPLE_LOCATIONS.slice();
+        state.rates = savedRates && typeof savedRates === 'object' ? savedRates : {};
+        Object.keys(CURRENCY_META).forEach(code => {
+          if (typeof state.rates[code] !== 'number' || isNaN(state.rates[code])) {
+            state.rates[code] = CURRENCY_META[code].defaultRate;
+          }
+        });
+      }
+
+      function persistState() {
+        storageSet(STORAGE_KEY_ITEMS, state.items);
+        storageSet(STORAGE_KEY_LOCATIONS, state.locations);
+        storageSet(STORAGE_KEY_RATES, state.rates);
+      }
+
+      // Price Calculation Engine (Unit & Total, Pre/Post Tax & Pre/Post Discount)
+      function calculatePricing(item) {
+        const inputPrice = Math.max(0, Number(item.inputPrice) || 0);
+        const qty = Math.max(1, parseInt(item.qty, 10) || 1);
+        const taxRate = Math.max(0, Number(item.taxRate) || 0);
+        const rateRatio = taxRate / 100;
+        const exchangeRate = Math.max(0, Number(item.exchangeRate) || 0);
+        const discountType = item.discountType || 'percent';
+        const discountVal = Math.max(0, Number(item.discountValue) || 0);
+        const discountOrder = item.discountOrder || 'before_tax';
+
+        let unitPreDiscPreTax = 0;
+        let unitPreDiscPostTax = 0;
+
+        if (item.priceMode === 'tax_included') {
+          unitPreDiscPostTax = inputPrice;
+          unitPreDiscPreTax = rateRatio > 0 ? inputPrice / (1 + rateRatio) : inputPrice;
+        } else {
+          unitPreDiscPreTax = inputPrice;
+          unitPreDiscPostTax = inputPrice * (1 + rateRatio);
+        }
+
+        let unitPostDiscPreTax = unitPreDiscPreTax;
+        let unitPostDiscPostTax = unitPreDiscPostTax;
+
+        if (discountType === 'percent') {
+          const pct = Math.min(100, discountVal);
+          const factor = 1 - pct / 100;
+          unitPostDiscPreTax = unitPreDiscPreTax * factor;
+          unitPostDiscPostTax = unitPreDiscPostTax * factor;
+        } else {
+          // Fixed discount per unit
+          if (discountOrder === 'after_tax') {
+            unitPostDiscPostTax = Math.max(0, unitPreDiscPostTax - discountVal);
+            unitPostDiscPreTax = rateRatio > 0 ? unitPostDiscPostTax / (1 + rateRatio) : unitPostDiscPostTax;
+          } else {
+            unitPostDiscPreTax = Math.max(0, unitPreDiscPreTax - discountVal);
+            unitPostDiscPostTax = unitPostDiscPreTax * (1 + rateRatio);
+          }
+        }
+
+        const totalPreDiscPreTax = unitPreDiscPreTax * qty;
+        const totalPreDiscPostTax = unitPreDiscPostTax * qty;
+        const totalPostDiscPreTax = unitPostDiscPreTax * qty;
+        const totalPostDiscPostTax = unitPostDiscPostTax * qty;
+
+        const discountSavedPostTax = Math.max(0, totalPreDiscPostTax - totalPostDiscPostTax);
+        const taxAmountPostDisc = Math.max(0, totalPostDiscPostTax - totalPostDiscPreTax);
+
+        return {
+          qty,
+          unitPreDiscPreTax,
+          unitPreDiscPostTax,
+          unitPostDiscPreTax,
+          unitPostDiscPostTax,
+          totalPreDiscPreTax,
+          totalPreDiscPostTax,
+          totalPostDiscPreTax,
+          totalPostDiscPostTax,
+          discountSavedPostTax,
+          taxAmountPostDisc,
+          twdPreDiscPreTax: totalPreDiscPreTax * exchangeRate,
+          twdPreDiscPostTax: totalPreDiscPostTax * exchangeRate,
+          twdPostDiscPreTax: totalPostDiscPreTax * exchangeRate,
+          twdPostDiscPostTax: totalPostDiscPostTax * exchangeRate,
+          twdDiscountSaved: discountSavedPostTax * exchangeRate
+        };
+      }
+
+      // Formatters
+      function formatMoney(amount, currency) {
+        const meta = CURRENCY_META[currency] || { symbol: currency + ' ', decimals: 2 };
+        const safe = isFinite(amount) ? amount : 0;
+        const formatted = safe.toLocaleString('zh-TW', {
+          minimumFractionDigits: meta.decimals,
+          maximumFractionDigits: meta.decimals
+        });
+        return meta.symbol + formatted;
+      }
+
+      function formatTWD(amount) {
+        const safe = isFinite(amount) ? amount : 0;
+        return Math.round(safe).toLocaleString('zh-TW');
+      }
+
+      function escapeHtml(str) {
+        return String(str == null ? '' : str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      // Barcode Format & Checksum Validator (JAN / EAN-13 / EAN-8 / UPC-A)
+      function inspectBarcode(code) {
+        const clean = String(code || '').trim();
+        if (!clean) return { label: '支援鏡頭 / 掃碼槍', style: 'bg-slate-100 text-slate-500' };
+        if (!/^\d+$/.test(clean)) return { label: '自訂料號/編碼', style: 'bg-slate-100 text-slate-600' };
+
+        const len = clean.length;
+        if (len === 13 || len === 8 || len === 12) {
+          const digits = clean.split('').map(Number);
+          const checkDigit = digits.pop();
+          let sum = 0;
+          if (len === 13) {
+            digits.forEach((d, idx) => { sum += d * (idx % 2 === 0 ? 1 : 3); });
+          } else {
+            // EAN-8 & UPC-A: odd positions from right (reversed) * 3
+            digits.reverse().forEach((d, idx) => { sum += d * (idx % 2 === 0 ? 3 : 1); });
+          }
+          const expected = (10 - (sum % 10)) % 10;
+          const valid = expected === checkDigit;
+          const typeName = len === 13 ? (clean.startsWith('45') || clean.startsWith('49') ? 'JAN-13' : 'EAN-13')
+            : (len === 12 ? 'UPC-A' : 'EAN-8');
+          if (valid) {
+            return { label: typeName + ' ✓', style: 'bg-emerald-100 text-emerald-700' };
+          }
+          return { label: typeName + ' 檢核碼異常', style: 'bg-amber-100 text-amber-800' };
+        }
+        return { label: len + ' 碼編碼', style: 'bg-indigo-50 text-indigo-700' };
+      }
+
+      // Toast helper
+      function showToast(message, type) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const colors = type === 'error'
+          ? 'bg-rose-600 text-white'
+          : (type === 'info' ? 'bg-slate-800 text-white' : 'bg-emerald-600 text-white');
+        toast.className = 'pointer-events-auto px-4 py-2.5 rounded-xl shadow-lg text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all ' + colors;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(8px)';
+          setTimeout(() => toast.remove(), 250);
+        }, 2600);
+      }
+
+      // Copy to clipboard with fallback
+      function copyText(text, label) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(() => {
+            showToast('已複製 ' + label + '：' + text);
+          }).catch(() => fallbackCopy(text, label));
+        } else {
+          fallbackCopy(text, label);
+        }
+      }
+
+      function fallbackCopy(text, label) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand('copy');
+          showToast('已複製 ' + label + '：' + text);
+        } catch (e) {
+          showToast('無法自動複製，請手動選取', 'error');
+        }
+        document.body.removeChild(ta);
+      }
+
+      // Modal helper
+      function openConfirmModal(title, desc, onConfirm) {
+        document.getElementById('modal-title').textContent = title;
+        document.getElementById('modal-desc').textContent = desc;
+        state.pendingConfirmAction = onConfirm;
+        const modal = document.getElementById('confirm-modal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+
+      function closeConfirmModal() {
+        state.pendingConfirmAction = null;
+        const modal = document.getElementById('confirm-modal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+
+      // Geolocation helper
+      function requestGPS(latInputId, lngInputId, statusElId) {
+        const statusEl = statusElId ? document.getElementById(statusElId) : null;
+        if (!navigator.geolocation) {
+          if (statusEl) statusEl.textContent = '瀏覽器不支援定位，請手動輸入';
+          showToast('此環境不支援 GPS 定位，請手動填寫地點或座標', 'info');
+          return;
+        }
+        if (statusEl) statusEl.textContent = '定位中...';
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const lat = Number(pos.coords.latitude.toFixed(5));
+            const lng = Number(pos.coords.longitude.toFixed(5));
+            document.getElementById(latInputId).value = lat;
+            document.getElementById(lngInputId).value = lng;
+            if (statusEl) statusEl.textContent = '已取得 GPS 座標';
+            showToast('已成功紀錄目前 GPS 座標 (' + lat + ', ' + lng + ')');
+          },
+          () => {
+            if (statusEl) statusEl.textContent = '無法取得定位，可手動輸入';
+            showToast('無法取得 GPS 定位（可能未授權或預覽環境限制），您仍可手動輸入店家與座標', 'info');
+          },
+          { enableHighAccuracy: true, timeout: 7000 }
+        );
+      }
+
+      // Live Calculator Update
+      function updateLiveCalculator() {
+        const currency = document.getElementById('input-currency').value;
+        const inputPrice = document.getElementById('input-price').value;
+        const exchangeRate = document.getElementById('input-rate').value;
+        const qty = document.getElementById('input-qty').value;
+        const taxRate = document.getElementById('input-tax').value;
+        const discountType = document.getElementById('input-discount-type').value;
+        const discountValue = document.getElementById('input-discount').value;
+        const discountOrder = document.getElementById('input-discount-order').value;
+
+        const res = calculatePricing({
+          inputPrice,
+          qty,
+          taxRate,
+          exchangeRate,
+          priceMode: state.priceMode,
+          discountType,
+          discountValue,
+          discountOrder
+        });
+
+        document.getElementById('calc-qty-badge').textContent = res.qty;
+        document.getElementById('calc-pre-pretax').textContent = formatMoney(res.totalPreDiscPreTax, currency);
+        document.getElementById('calc-pre-pretax-twd').textContent = '≈ NT$' + formatTWD(res.twdPreDiscPreTax);
+        document.getElementById('calc-pre-posttax').textContent = formatMoney(res.totalPreDiscPostTax, currency);
+        document.getElementById('calc-pre-posttax-twd').textContent = '≈ NT$' + formatTWD(res.twdPreDiscPostTax);
+        document.getElementById('calc-post-pretax').textContent = formatMoney(res.totalPostDiscPreTax, currency);
+        document.getElementById('calc-post-pretax-twd').textContent = '≈ NT$' + formatTWD(res.twdPostDiscPreTax);
+        document.getElementById('calc-post-posttax').textContent = formatMoney(res.totalPostDiscPostTax, currency);
+        document.getElementById('calc-post-posttax-twd').textContent = '≈ NT$' + formatTWD(res.twdPostDiscPostTax);
+
+        document.getElementById('calc-unit-final').textContent = formatMoney(res.unitPostDiscPostTax, currency);
+        document.getElementById('calc-tax-diff').textContent = formatMoney(res.taxAmountPostDisc, currency);
+
+        const savingPill = document.getElementById('calc-saving-pill');
+        if (res.discountSavedPostTax > 0.001) {
+          savingPill.textContent = '折扣省 ' + formatMoney(res.discountSavedPostTax, currency);
+          savingPill.classList.remove('hidden');
+        } else {
+          savingPill.classList.add('hidden');
+        }
+
+        // Toggle discount order select visibility when percent vs fixed
+        const orderEl = document.getElementById('input-discount-order');
+        if (discountType === 'percent') {
+          orderEl.disabled = true;
+          orderEl.classList.add('opacity-50');
+        } else {
+          orderEl.disabled = false;
+          orderEl.classList.remove('opacity-50');
+        }
+      }
+
+      function updateBarcodeBadge() {
+        const val = document.getElementById('input-barcode').value;
+        const info = inspectBarcode(val);
+        const badge = document.getElementById('barcode-badge');
+        badge.textContent = info.label;
+        badge.className = 'text-[11px] font-medium px-1.5 py-0.5 rounded ' + info.style;
+      }
+
+      // Upsert location into memory bank
+      function rememberLocation(locData) {
+        const name = (locData.name || '').trim();
+        if (!name) return;
+        const existing = state.locations.find(l => l.name.toLowerCase() === name.toLowerCase());
+        if (existing) {
+          if (locData.address) existing.address = locData.address;
+          if (locData.lat !== null && !isNaN(locData.lat)) existing.lat = locData.lat;
+          if (locData.lng !== null && !isNaN(locData.lng)) existing.lng = locData.lng;
+          if (locData.defaultCurrency) existing.defaultCurrency = locData.defaultCurrency;
+          if (locData.defaultTax !== undefined) existing.defaultTax = locData.defaultTax;
+          existing.isSample = false;
+        } else {
+          state.locations.unshift({
+            id: 'loc-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+            name,
+            address: (locData.address || '').trim(),
+            lat: locData.lat !== '' && locData.lat != null && !isNaN(Number(locData.lat)) ? Number(locData.lat) : null,
+            lng: locData.lng !== '' && locData.lng != null && !isNaN(Number(locData.lng)) ? Number(locData.lng) : null,
+            defaultCurrency: locData.defaultCurrency || 'JPY',
+            defaultTax: Number(locData.defaultTax) >= 0 ? Number(locData.defaultTax) : 10,
+            isSample: false
+          });
+        }
+      }
+
+      // Render KPIs & Banners
+      function renderKPIs() {
+        let totalQty = 0;
+        let sumPostPreTaxTWD = 0;
+        let sumPostPostTaxTWD = 0;
+        let sumDiscountSavedTWD = 0;
+
+        state.items.forEach(item => {
+          const c = calculatePricing(item);
+          totalQty += c.qty;
+          sumPostPreTaxTWD += c.twdPostDiscPreTax;
+          sumPostPostTaxTWD += c.twdPostDiscPostTax;
+          sumDiscountSavedTWD += c.twdDiscountSaved;
+        });
+
+        document.getElementById('kpi-items').textContent = state.items.length;
+        document.getElementById('kpi-qty').textContent = totalQty;
+        document.getElementById('kpi-post-pretax-twd').textContent = formatTWD(sumPostPreTaxTWD);
+        document.getElementById('kpi-post-posttax-twd').textContent = formatTWD(sumPostPostTaxTWD);
+        document.getElementById('kpi-discount-saved-twd').textContent = formatTWD(sumDiscountSavedTWD);
+        document.getElementById('nav-loc-count').textContent = state.locations.length;
+
+        const hasSample = state.items.some(i => i.isSample) || state.locations.some(l => l.isSample);
+        document.getElementById('sample-banner').classList.toggle('hidden', !hasSample);
+      }
+
+      // Render Quick Location Chips in Form + Location Filter Dropdown
+      function renderLocationSelectors() {
+        const chipsWrap = document.getElementById('quick-locations-wrap');
+        const chipsList = document.getElementById('quick-locations-list');
+        if (state.locations.length === 0) {
+          chipsWrap.classList.add('hidden');
+        } else {
+          chipsWrap.classList.remove('hidden');
+          chipsList.innerHTML = state.locations.slice(0, 8).map(loc => `
+            <button type="button" data-apply-loc="${escapeHtml(loc.id)}"
+              class="px-2.5 py-1 rounded-full bg-white border border-amber-300/80 text-xs font-medium text-amber-900 hover:bg-amber-100 transition flex items-center gap-1 shadow-2xs">
+              <i data-lucide="map-pin" class="w-3 h-3 text-amber-600"></i>
+              <span>${escapeHtml(loc.name)}</span>
+            </button>
+          `).join('');
+        }
+
+        // Update filter dropdown
+        const filterLoc = document.getElementById('filter-location');
+        const currentVal = state.filters.location;
+        const uniqueLocNames = Array.from(new Set([
+          ...state.locations.map(l => l.name),
+          ...state.items.map(i => i.locationName).filter(Boolean)
+        ]));
+        filterLoc.innerHTML = '<option value="">全部購買地點</option>' +
+          uniqueLocNames.map(name => `<option value="${escapeHtml(name)}" ${name === currentVal ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('');
+      }
+
+      // Render Items List
+      function renderItemsList() {
+        const container = document.getElementById('items-list');
+        const q = state.filters.search.trim().toLowerCase();
+        const locFilter = state.filters.location;
+        const curFilter = state.filters.currency;
+
+        let filtered = state.items.filter(item => {
+          if (locFilter && item.locationName !== locFilter) return false;
+          if (curFilter && item.currency !== curFilter) return false;
+          if (q) {
+            const hay = [item.name, item.barcode, item.locationName, item.locationAddress, item.note].join(' ').toLowerCase();
+            if (!hay.includes(q)) return false;
+          }
+          return true;
+        });
+
+        // Sort
+        filtered.sort((a, b) => {
+          if (state.filters.sort === 'price_desc') {
+            return calculatePricing(b).twdPostDiscPostTax - calculatePricing(a).twdPostDiscPostTax;
+          }
+          if (state.filters.sort === 'price_asc') {
+            return calculatePricing(a).twdPostDiscPostTax - calculatePricing(b).twdPostDiscPostTax;
+          }
+          if (state.filters.sort === 'location') {
+            return (a.locationName || '未填寫').localeCompare(b.locationName || '未填寫', 'zh-Hant');
+          }
+          return (b.createdAt || 0) - (a.createdAt || 0);
+        });
+
+        document.getElementById('list-shown-count').textContent = filtered.length;
+        const hasFilter = Boolean(q || locFilter || curFilter);
+        document.getElementById('btn-clear-filters').classList.toggle('hidden', !hasFilter);
+
+        if (filtered.length === 0) {
+          container.innerHTML = `
+            <div class="bg-white rounded-2xl border border-dashed border-slate-300 p-10 text-center space-y-2">
+              <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                <i data-lucide="inbox" class="w-6 h-6"></i>
+              </div>
+              <div class="text-sm font-bold text-slate-700">${hasFilter ? '找不到符合篩選條件的採買紀錄' : '目前尚無代購採買紀錄'}</div>
+              <p class="text-xs text-slate-500">${hasFilter ? '請嘗試調整搜尋關鍵字或清除篩選條件。' : '從左側表單輸入品項名稱、國際編碼、價格與地點即可開始紀錄。'}</p>
+            </div>
+          `;
+          lucide.createIcons();
+          return;
+        }
+
+        container.innerHTML = filtered.map(item => {
+          const c = calculatePricing(item);
+          const dateStr = new Date(item.createdAt || Date.now()).toLocaleString('zh-TW', {
+            month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+          });
+          const discLabel = item.discountValue > 0
+            ? (item.discountType === 'percent' ? `${item.discountValue}% off` : `折 ${formatMoney(item.discountValue, item.currency)}`)
+            : '無折扣';
+          const hasCoords = item.lat !== null && item.lng !== null && item.lat !== '' && item.lng !== '' && !isNaN(Number(item.lat)) && !isNaN(Number(item.lng));
+          const mapUrl = hasCoords
+            ? `https://www.google.com/maps?q=${encodeURIComponent(item.lat + ',' + item.lng)}`
+            : (item.locationName ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((item.locationName + ' ' + (item.locationAddress || '')).trim())}` : '');
+
+          return `
+            <article class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:border-indigo-300 transition space-y-3">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0 space-y-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="text-sm sm:text-base font-bold text-slate-900 break-words">${escapeHtml(item.name)}</h3>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 tabular-nums">×${c.qty}</span>
+                    <span class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600">稅 ${item.taxRate}%・${escapeHtml(discLabel)}</span>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                    ${item.barcode ? `
+                      <button type="button" data-copy-barcode="${escapeHtml(item.barcode)}" title="點擊複製國際編碼"
+                        class="inline-flex items-center gap-1 font-mono bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md transition">
+                        <i data-lucide="barcode" class="w-3.5 h-3.5 text-slate-500"></i>
+                        <span>${escapeHtml(item.barcode)}</span>
+                      </button>
+                    ` : ''}
+                    ${item.locationName ? `
+                      <button type="button" data-filter-loc="${escapeHtml(item.locationName)}" title="篩選此地點"
+                        class="inline-flex items-center gap-1 bg-amber-50 hover:bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md font-medium transition">
+                        <i data-lucide="map-pin" class="w-3 h-3 text-amber-600"></i>
+                        <span>${escapeHtml(item.locationName)}</span>
+                      </button>
+                    ` : ''}
+                    ${mapUrl ? `
+                      <a href="${mapUrl}" target="_blank" rel="noopener noreferrer"
+                        class="inline-flex items-center gap-1 text-indigo-600 hover:underline font-medium">
+                        <i data-lucide="external-link" class="w-3 h-3"></i>
+                        <span>${hasCoords ? 'GPS 地圖' : '查地圖'}</span>
+                      </a>
+                    ` : ''}
+                    <span class="text-slate-400">${dateStr}</span>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-1 shrink-0">
+                  <button type="button" data-edit-item="${escapeHtml(item.id)}" title="編輯"
+                    class="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition">
+                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                  </button>
+                  <button type="button" data-delete-item="${escapeHtml(item.id)}" title="刪除"
+                    class="p-2 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 4-Way Price Breakdown Grid -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                <div class="rounded-xl bg-slate-50 border border-slate-200/80 px-2.5 py-2">
+                  <div class="text-[11px] text-slate-500">折扣前・未稅</div>
+                  <div class="font-bold text-slate-700 tabular-nums mt-0.5">${formatMoney(c.totalPreDiscPreTax, item.currency)}</div>
+                  <div class="text-[11px] text-slate-400 tabular-nums">NT$${formatTWD(c.twdPreDiscPreTax)}</div>
+                </div>
+                <div class="rounded-xl bg-slate-50 border border-slate-200/80 px-2.5 py-2">
+                  <div class="text-[11px] text-slate-500">折扣前・含稅</div>
+                  <div class="font-bold text-slate-700 tabular-nums mt-0.5">${formatMoney(c.totalPreDiscPostTax, item.currency)}</div>
+                  <div class="text-[11px] text-slate-400 tabular-nums">NT$${formatTWD(c.twdPreDiscPostTax)}</div>
+                </div>
+                <div class="rounded-xl bg-emerald-50/70 border border-emerald-200/80 px-2.5 py-2">
+                  <div class="text-[11px] font-semibold text-emerald-700">折扣後・未稅</div>
+                  <div class="font-bold text-emerald-800 tabular-nums mt-0.5">${formatMoney(c.totalPostDiscPreTax, item.currency)}</div>
+                  <div class="text-[11px] text-emerald-700/80 tabular-nums">NT$${formatTWD(c.twdPostDiscPreTax)}</div>
+                </div>
+                <div class="rounded-xl bg-indigo-50/70 border border-indigo-200/80 px-2.5 py-2">
+                  <div class="text-[11px] font-semibold text-indigo-700">折扣後・含稅</div>
+                  <div class="font-bold text-indigo-900 tabular-nums mt-0.5">${formatMoney(c.totalPostDiscPostTax, item.currency)}</div>
+                  <div class="text-[11px] text-indigo-700/80 tabular-nums">NT$${formatTWD(c.twdPostDiscPostTax)}</div>
+                </div>
+              </div>
+
+              ${item.note || item.locationAddress ? `
+                <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 pt-1 border-t border-slate-100">
+                  <span>${item.note ? '備註：' + escapeHtml(item.note) : ''}</span>
+                  ${item.locationAddress ? `<span class="text-slate-400">${escapeHtml(item.locationAddress)}</span>` : ''}
+                </div>
+              ` : ''}
+            </article>
+          `;
+        }).join('');
+
+        lucide.createIcons();
+      }
+
+      // Render Saved Locations Grid (View 2)
+      function renderLocationsGrid() {
+        const grid = document.getElementById('locations-grid');
+        if (state.locations.length === 0) {
+          grid.innerHTML = `
+            <div class="md:col-span-2 lg:col-span-3 rounded-2xl border border-dashed border-slate-300 p-10 text-center space-y-2">
+              <div class="text-sm font-bold text-slate-700">尚未記憶任何購買地點</div>
+              <p class="text-xs text-slate-500">新增採買紀錄時勾選「自動記憶此購買地點」，或點擊上方「新增常去地點」即可建立地點庫。</p>
+            </div>
+          `;
+          return;
+        }
+
+        grid.innerHTML = state.locations.map(loc => {
+          const matchedItems = state.items.filter(i => i.locationName === loc.name);
+          const totalTWD = matchedItems.reduce((acc, i) => acc + calculatePricing(i).twdPostDiscPostTax, 0);
+          const hasCoords = loc.lat !== null && loc.lng !== null && !isNaN(Number(loc.lat)) && !isNaN(Number(loc.lng));
+          const mapUrl = hasCoords
+            ? `https://www.google.com/maps?q=${encodeURIComponent(loc.lat + ',' + loc.lng)}`
+            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((loc.name + ' ' + (loc.address || '')).trim())}`;
+
+          return `
+            <div class="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 flex flex-col justify-between gap-3 hover:border-amber-300 transition">
+              <div class="space-y-1.5">
+                <div class="flex items-start justify-between gap-2">
+                  <h3 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                    <i data-lucide="map-pin" class="w-4 h-4 text-amber-600 shrink-0"></i>
+                    <span>${escapeHtml(loc.name)}</span>
+                  </h3>
+                  <button type="button" data-delete-loc="${escapeHtml(loc.id)}" title="移除記憶地點"
+                    class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+                ${loc.address ? `<p class="text-xs text-slate-600">${escapeHtml(loc.address)}</p>` : ''}
+                <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+                  <span class="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-600 font-medium">${escapeHtml(loc.defaultCurrency || 'JPY')}・稅 ${loc.defaultTax ?? 10}%</span>
+                  ${hasCoords ? `<span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-mono">${loc.lat}, ${loc.lng}</span>` : ''}
+                  <a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 hover:underline font-medium inline-flex items-center gap-1">
+                    <i data-lucide="map" class="w-3 h-3"></i>開啟地圖
+                  </a>
+                </div>
+              </div>
+
+              <div class="pt-3 border-t border-slate-200/80 space-y-2.5">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-slate-500">已採買 <strong class="text-slate-800 tabular-nums">${matchedItems.length}</strong> 筆品項</span>
+                  <span class="font-bold text-indigo-700 tabular-nums">NT$${formatTWD(totalTWD)}</span>
+                </div>
+                <div class="flex gap-2">
+                  <button type="button" data-shop-here="${escapeHtml(loc.id)}" class="flex-1 py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition">
+                    在此新增商品
+                  </button>
+                  <button type="button" data-view-loc-items="${escapeHtml(loc.name)}" class="py-1.5 px-3 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold transition">
+                    查看紀錄
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        lucide.createIcons();
+      }
+
+      // Render Analytics (View 3)
+      function renderAnalytics() {
+        // By Location
+        const locMap = {};
+        state.items.forEach(item => {
+          const key = item.locationName || '未指定購買地點';
+          if (!locMap[key]) locMap[key] = { count: 0, qty: 0, twdPostTax: 0, twdPreTax: 0 };
+          const c = calculatePricing(item);
+          locMap[key].count += 1;
+          locMap[key].qty += c.qty;
+          locMap[key].twdPostTax += c.twdPostDiscPostTax;
+          locMap[key].twdPreTax += c.twdPostDiscPreTax;
+        });
+
+        const locEntries = Object.entries(locMap).sort((a, b) => b[1].twdPostTax - a[1].twdPostTax);
+        const totalAllTWD = locEntries.reduce((s, [, v]) => s + v.twdPostTax, 0) || 1;
+        const locEl = document.getElementById('analytics-by-location');
+
+        if (locEntries.length === 0) {
+          locEl.innerHTML = '<p class="text-xs text-slate-400">尚無採買資料可統計。</p>';
+        } else {
+          locEl.innerHTML = locEntries.map(([name, stat]) => {
+            const pct = Math.min(100, Math.round((stat.twdPostTax / totalAllTWD) * 100));
+            return `
+              <div class="space-y-1.5">
+                <div class="flex items-center justify-between text-xs sm:text-sm">
+                  <span class="font-semibold text-slate-800 truncate pr-2">${escapeHtml(name)}</span>
+                  <span class="font-bold text-slate-900 tabular-nums shrink-0">NT$${formatTWD(stat.twdPostTax)} <span class="text-xs font-normal text-slate-500">(${stat.count}筆/${stat.qty}件)</span></span>
+                </div>
+                <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
+                  <div class="h-full rounded-full bg-amber-500" style="width: ${pct}%"></div>
+                </div>
+                <div class="flex justify-between text-[11px] text-slate-500 tabular-nums">
+                  <span>折後未稅約 NT$${formatTWD(stat.twdPreTax)}</span>
+                  <span>佔比 ${pct}%</span>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        // By Currency
+        const curMap = {};
+        state.items.forEach(item => {
+          const cur = item.currency || 'JPY';
+          if (!curMap[cur]) curMap[cur] = { preDiscPostTax: 0, postDiscPreTax: 0, postDiscPostTax: 0, saved: 0, twd: 0 };
+          const c = calculatePricing(item);
+          curMap[cur].preDiscPostTax += c.totalPreDiscPostTax;
+          curMap[cur].postDiscPreTax += c.totalPostDiscPreTax;
+          curMap[cur].postDiscPostTax += c.totalPostDiscPostTax;
+          curMap[cur].saved += c.discountSavedPostTax;
+          curMap[cur].twd += c.twdPostDiscPostTax;
+        });
+
+        const curEntries = Object.entries(curMap);
+        const curEl = document.getElementById('analytics-by-currency');
+        if (curEntries.length === 0) {
+          curEl.innerHTML = '<p class="text-xs text-slate-400">尚無採買資料可統計。</p>';
+        } else {
+          curEl.innerHTML = curEntries.map(([cur, stat]) => `
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-bold text-slate-900">${escapeHtml(cur)} (${(CURRENCY_META[cur] || {}).label || cur})</span>
+                <span class="text-xs font-bold text-indigo-700 tabular-nums">實付約 NT$${formatTWD(stat.twd)}</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-xs tabular-nums">
+                <div>
+                  <div class="text-[11px] text-slate-500">折後未稅</div>
+                  <div class="font-semibold text-emerald-700">${formatMoney(stat.postDiscPreTax, cur)}</div>
+                </div>
+                <div>
+                  <div class="text-[11px] text-slate-500">折後含稅</div>
+                  <div class="font-semibold text-slate-900">${formatMoney(stat.postDiscPostTax, cur)}</div>
+                </div>
+                <div>
+                  <div class="text-[11px] text-slate-500">折扣省下</div>
+                  <div class="font-semibold text-amber-700">${formatMoney(stat.saved, cur)}</div>
+                </div>
+              </div>
+            </div>
+          `).join('');
+        }
+      }
+
+      // Render All
+      function renderAll() {
+        renderKPIs();
+        renderLocationSelectors();
+        renderItemsList();
+        renderLocationsGrid();
+        renderAnalytics();
+        updateLiveCalculator();
+        lucide.createIcons();
+      }
+
+      // Tab Switching
+      function switchTab(tabName) {
+        state.activeTab = tabName;
+        ['record', 'locations', 'analytics'].forEach(t => {
+          document.getElementById('view-' + t).classList.toggle('hidden', t !== tabName);
+          const btn = document.getElementById('tab-' + t);
+          if (t === tabName) {
+            btn.className = 'tab-btn px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 bg-white text-indigo-700 shadow-sm';
+          } else {
+            btn.className = 'tab-btn px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900';
+          }
+        });
+        lucide.createIcons();
+      }
+
+      // Set Price Mode
+      function setPriceMode(mode) {
+        state.priceMode = mode;
+        document.getElementById('price-mode-label').textContent = mode === 'tax_included' ? '含稅' : '未稅';
+        document.querySelectorAll('.price-mode-btn').forEach(btn => {
+          const active = btn.dataset.mode === mode;
+          btn.className = active
+            ? 'price-mode-btn px-2.5 py-1 rounded-md bg-white text-indigo-700 shadow-sm transition'
+            : 'price-mode-btn px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition';
+        });
+        updateLiveCalculator();
+      }
+
+      // Reset Item Form
+      function resetItemForm(keepLocation) {
+        const locName = keepLocation ? document.getElementById('input-loc-name').value : '';
+        const locAddr = keepLocation ? document.getElementById('input-loc-address').value : '';
+        const lat = keepLocation ? document.getElementById('input-lat').value : '';
+        const lng = keepLocation ? document.getElementById('input-lng').value : '';
+
+        document.getElementById('edit-id').value = '';
+        document.getElementById('input-name').value = '';
+        document.getElementById('input-barcode').value = '';
+        document.getElementById('input-qty').value = '1';
+        document.getElementById('input-price').value = '';
+        document.getElementById('input-discount-type').value = 'percent';
+        document.getElementById('input-discount').value = '0';
+        document.getElementById('input-discount-order').value = 'before_tax';
+        document.getElementById('input-note').value = '';
+
+        document.getElementById('input-loc-name').value = locName;
+        document.getElementById('input-loc-address').value = locAddr;
+        document.getElementById('input-lat').value = lat;
+        document.getElementById('input-lng').value = lng;
+        document.getElementById('gps-status').textContent = '';
+
+        document.getElementById('form-heading').textContent = '新增代購品項';
+        document.getElementById('btn-submit-text').textContent = '儲存此筆代購紀錄';
+        document.getElementById('btn-cancel-edit').classList.add('hidden');
+        updateBarcodeBadge();
+        updateLiveCalculator();
+      }
+
+      // Apply Location to Form
+      function applyLocationToForm(locId) {
+        const loc = state.locations.find(l => l.id === locId);
+        if (!loc) return;
+        document.getElementById('input-loc-name').value = loc.name || '';
+        document.getElementById('input-loc-address').value = loc.address || '';
+        document.getElementById('input-lat').value = loc.lat != null ? loc.lat : '';
+        document.getElementById('input-lng').value = loc.lng != null ? loc.lng : '';
+        if (loc.defaultCurrency && CURRENCY_META[loc.defaultCurrency]) {
+          document.getElementById('input-currency').value = loc.defaultCurrency;
+          document.getElementById('input-rate').value = state.rates[loc.defaultCurrency] || CURRENCY_META[loc.defaultCurrency].defaultRate;
+        }
+        if (loc.defaultTax !== undefined && loc.defaultTax !== null) {
+          document.getElementById('input-tax').value = loc.defaultTax;
+        }
+        updateLiveCalculator();
+        showToast('已套用購買地點：' + loc.name);
+      }
+
+      // Populate Form for Editing
+      function startEditItem(itemId) {
+        const item = state.items.find(i => i.id === itemId);
+        if (!item) return;
+        switchTab('record');
+        document.getElementById('edit-id').value = item.id;
+        document.getElementById('input-name').value = item.name || '';
+        document.getElementById('input-barcode').value = item.barcode || '';
+        document.getElementById('input-qty').value = item.qty || 1;
+        document.getElementById('input-currency').value = item.currency || 'JPY';
+        document.getElementById('input-rate').value = item.exchangeRate ?? state.rates[item.currency] ?? 1;
+        document.getElementById('input-price').value = item.inputPrice ?? '';
+        setPriceMode(item.priceMode || 'tax_excluded');
+        document.getElementById('input-tax').value = item.taxRate ?? 10;
+        document.getElementById('input-discount-type').value = item.discountType || 'percent';
+        document.getElementById('input-discount').value = item.discountValue ?? 0;
+        document.getElementById('input-discount-order').value = item.discountOrder || 'before_tax';
+        document.getElementById('input-loc-name').value = item.locationName || '';
+        document.getElementById('input-loc-address').value = item.locationAddress || '';
+        document.getElementById('input-lat').value = item.lat != null ? item.lat : '';
+        document.getElementById('input-lng').value = item.lng != null ? item.lng : '';
+        document.getElementById('input-note').value = item.note || '';
+
+        document.getElementById('form-heading').textContent = '編輯代購品項';
+        document.getElementById('btn-submit-text').textContent = '更新紀錄';
+        document.getElementById('btn-cancel-edit').classList.remove('hidden');
+        updateBarcodeBadge();
+        updateLiveCalculator();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // Export CSV
+      function exportCSV() {
+        if (state.items.length === 0) {
+          showToast('目前沒有可匯出的採買紀錄', 'info');
+          return;
+        }
+        const headers = [
+          '紀錄時間', '品項名稱', '國際編碼', '數量', '幣別', '對台幣匯率', '輸入價格基準',
+          '輸入單價', '稅率(%)', '折扣類型', '折扣數值',
+          '折扣前未稅(外幣)', '折扣前含稅(外幣)', '折扣後未稅(外幣)', '折扣後含稅(外幣)',
+          '折後未稅(約台幣)', '折後含稅(約台幣)', '折扣省下(約台幣)',
+          '購買地點', '地址備註', '緯度', '經度', '備註'
+        ];
+        const rows = state.items.map(item => {
+          const c = calculatePricing(item);
+          const time = new Date(item.createdAt || Date.now()).toLocaleString('zh-TW');
+          return [
+            time,
+            item.name,
+            item.barcode ? ('="' + item.barcode + '"') : '',
+            c.qty,
+            item.currency,
+            item.exchangeRate,
+            item.priceMode === 'tax_included' ? '含稅價' : '未稅價',
+            item.inputPrice,
+            item.taxRate,
+            item.discountType === 'percent' ? '%折扣' : '固定折抵',
+            item.discountValue,
+            c.totalPreDiscPreTax.toFixed(2),
+            c.totalPreDiscPostTax.toFixed(2),
+            c.totalPostDiscPreTax.toFixed(2),
+            c.totalPostDiscPostTax.toFixed(2),
+            Math.round(c.twdPostDiscPreTax),
+            Math.round(c.twdPostDiscPostTax),
+            Math.round(c.twdDiscountSaved),
+            item.locationName || '',
+            item.locationAddress || '',
+            item.lat != null ? item.lat : '',
+            item.lng != null ? item.lng : '',
+            item.note || ''
+          ].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',');
+        });
+
+        const csvContent = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'daigou_records_' + new Date().toISOString().slice(0, 10) + '.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('已匯出 CSV 採買明細表');
+      }
+
+      // Export JSON
+      function exportJSON() {
+        const payload = {
+          exportedAt: new Date().toISOString(),
+          items: state.items,
+          locations: state.locations,
+          rates: state.rates
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'daigou_backup_' + new Date().toISOString().slice(0, 10) + '.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('已下載 JSON 備份檔');
+      }
+
+      // Bind All Event Listeners
+      function bindEvents() {
+        // Navigation Tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+          btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
+
+        // Price Mode Toggle
+        document.querySelectorAll('.price-mode-btn').forEach(btn => {
+          btn.addEventListener('click', () => setPriceMode(btn.dataset.mode));
+        });
+
+        // Currency change -> load saved rate
+        document.getElementById('input-currency').addEventListener('change', (e) => {
+          const code = e.target.value;
+          const rate = state.rates[code] || CURRENCY_META[code].defaultRate;
+          document.getElementById('input-rate').value = rate;
+          updateLiveCalculator();
+        });
+
+        // Rate change -> remember per currency
+        document.getElementById('input-rate').addEventListener('input', (e) => {
+          const code = document.getElementById('input-currency').value;
+          const val = Number(e.target.value);
+          if (val > 0) {
+            state.rates[code] = val;
+            storageSet(STORAGE_KEY_RATES, state.rates);
+          }
+          updateLiveCalculator();
+        });
+
+        // Live calculation inputs
+        ['input-price', 'input-qty', 'input-tax', 'input-discount-type', 'input-discount', 'input-discount-order'].forEach(id => {
+          document.getElementById(id).addEventListener('input', updateLiveCalculator);
+          document.getElementById(id).addEventListener('change', updateLiveCalculator);
+        });
+
+        // Qty steppers
+        document.getElementById('btn-qty-minus').addEventListener('click', () => {
+          const el = document.getElementById('input-qty');
+          el.value = Math.max(1, (parseInt(el.value, 10) || 1) - 1);
+          updateLiveCalculator();
+        });
+        document.getElementById('btn-qty-plus').addEventListener('click', () => {
+          const el = document.getElementById('input-qty');
+          el.value = (parseInt(el.value, 10) || 1) + 1;
+          updateLiveCalculator();
+        });
+
+        // Quick tax buttons
+        document.querySelectorAll('.quick-tax').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.getElementById('input-tax').value = btn.dataset.tax;
+            document.querySelectorAll('.quick-tax').forEach(b => {
+              b.className = b === btn
+                ? 'quick-tax px-2 py-0.5 text-[11px] rounded-md bg-indigo-50 border border-indigo-300 text-indigo-700 font-semibold transition'
+                : 'quick-tax px-2 py-0.5 text-[11px] rounded-md bg-white border border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-700 transition';
+            });
+            updateLiveCalculator();
+          });
+        });
+
+        // Quick discount buttons
+        document.querySelectorAll('.quick-disc').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.getElementById('input-discount-type').value = 'percent';
+            document.getElementById('input-discount').value = btn.dataset.disc;
+            document.querySelectorAll('.quick-disc').forEach(b => {
+              b.className = b === btn
+                ? 'quick-disc px-2 py-0.5 text-[11px] rounded-md bg-indigo-50 border border-indigo-300 text-indigo-700 font-semibold transition'
+                : 'quick-disc px-2 py-0.5 text-[11px] rounded-md bg-white border border-slate-200 text-slate-600 hover:border-indigo-400 transition';
+            });
+            updateLiveCalculator();
+          });
+        });
+
+        // Barcode live validation & scanner Enter key jump
+        const barcodeInput = document.getElementById('input-barcode');
+        barcodeInput.addEventListener('input', updateBarcodeBadge);
+        barcodeInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('input-price').focus();
+          }
+        });
+
+        // GPS Buttons
+        document.getElementById('btn-get-gps').addEventListener('click', () => {
+          requestGPS('input-lat', 'input-lng', 'gps-status');
+        });
+        document.getElementById('btn-new-loc-gps').addEventListener('click', () => {
+          requestGPS('new-loc-lat', 'new-loc-lng', null);
+        });
+
+        // Reset / Cancel Edit
+        document.getElementById('btn-reset-form').addEventListener('click', () => resetItemForm(false));
+        document.getElementById('btn-cancel-edit').addEventListener('click', () => resetItemForm(false));
+
+        // Submit Item Form
+        document.getElementById('item-form').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const name = document.getElementById('input-name').value.trim();
+          const inputPrice = Number(document.getElementById('input-price').value);
+          if (!name) {
+            showToast('請輸入品項名稱', 'error');
+            return;
+          }
+          if (isNaN(inputPrice) || inputPrice < 0) {
+            showToast('請輸入有效的價格', 'error');
+            return;
+          }
+
+          const editId = document.getElementById('edit-id').value;
+          const currency = document.getElementById('input-currency').value;
+          const exchangeRate = Number(document.getElementById('input-rate').value) || state.rates[currency] || 1;
+          const taxRate = Number(document.getElementById('input-tax').value) || 0;
+          const locName = document.getElementById('input-loc-name').value.trim();
+          const locAddress = document.getElementById('input-loc-address').value.trim();
+          const latRaw = document.getElementById('input-lat').value.trim();
+          const lngRaw = document.getElementById('input-lng').value.trim();
+          const lat = latRaw !== '' && !isNaN(Number(latRaw)) ? Number(latRaw) : null;
+          const lng = lngRaw !== '' && !isNaN(Number(lngRaw)) ? Number(lngRaw) : null;
+
+          const record = {
+            id: editId || ('item-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6)),
+            name,
+            barcode: document.getElementById('input-barcode').value.trim(),
+            qty: Math.max(1, parseInt(document.getElementById('input-qty').value, 10) || 1),
+            currency,
+            exchangeRate,
+            inputPrice,
+            priceMode: state.priceMode,
+            taxRate,
+            discountType: document.getElementById('input-discount-type').value,
+            discountValue: Math.max(0, Number(document.getElementById('input-discount').value) || 0),
+            discountOrder: document.getElementById('input-discount-order').value,
+            locationName: locName,
+            locationAddress: locAddress,
+            lat,
+            lng,
+            note: document.getElementById('input-note').value.trim(),
+            createdAt: editId ? ((state.items.find(i => i.id === editId) || {}).createdAt || Date.now()) : Date.now(),
+            isSample: false
+          };
+
+          if (editId) {
+            const idx = state.items.findIndex(i => i.id === editId);
+            if (idx !== -1) state.items[idx] = record;
+            showToast('已更新採買紀錄：' + name);
+          } else {
+            state.items.unshift(record);
+            showToast('已儲存採買紀錄：' + name);
+          }
+
+          if (locName && document.getElementById('input-remember-loc').checked) {
+            rememberLocation({
+              name: locName,
+              address: locAddress,
+              lat,
+              lng,
+              defaultCurrency: currency,
+              defaultTax: taxRate
+            });
+          }
+
+          persistState();
+          // Keep current location filled when adding new items continuously in the same store!
+          resetItemForm(!editId);
+          renderAll();
+        });
+
+        // Quick location chips delegation
+        document.getElementById('quick-locations-list').addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-apply-loc]');
+          if (btn) applyLocationToForm(btn.dataset.applyLoc);
+        });
+
+        // Items list actions delegation
+        document.getElementById('items-list').addEventListener('click', (e) => {
+          const copyBtn = e.target.closest('[data-copy-barcode]');
+          if (copyBtn) {
+            copyText(copyBtn.dataset.copyBarcode, '國際編碼');
+            return;
+          }
+          const filterLocBtn = e.target.closest('[data-filter-loc]');
+          if (filterLocBtn) {
+            state.filters.location = filterLocBtn.dataset.filterLoc;
+            document.getElementById('filter-location').value = state.filters.location;
+            renderItemsList();
+            return;
+          }
+          const editBtn = e.target.closest('[data-edit-item]');
+          if (editBtn) {
+            startEditItem(editBtn.dataset.editItem);
+            return;
+          }
+          const delBtn = e.target.closest('[data-delete-item]');
+          if (delBtn) {
+            const id = delBtn.dataset.deleteItem;
+            const target = state.items.find(i => i.id === id);
+            openConfirmModal('刪除採買紀錄', '確定要刪除「' + (target ? target.name : '此筆紀錄') + '」嗎？', () => {
+              state.items = state.items.filter(i => i.id !== id);
+              persistState();
+              renderAll();
+              showToast('已刪除採買紀錄', 'info');
+            });
+          }
+        });
+
+        // Search & Filters
+        document.getElementById('filter-search').addEventListener('input', (e) => {
+          state.filters.search = e.target.value;
+          renderItemsList();
+        });
+        document.getElementById('filter-location').addEventListener('change', (e) => {
+          state.filters.location = e.target.value;
+          renderItemsList();
+        });
+        document.getElementById('filter-currency').addEventListener('change', (e) => {
+          state.filters.currency = e.target.value;
+          renderItemsList();
+        });
+        document.getElementById('filter-sort').addEventListener('change', (e) => {
+          state.filters.sort = e.target.value;
+          renderItemsList();
+        });
+        document.getElementById('btn-clear-filters').addEventListener('click', () => {
+          state.filters.search = '';
+          state.filters.location = '';
+          state.filters.currency = '';
+          document.getElementById('filter-search').value = '';
+          document.getElementById('filter-location').value = '';
+          document.getElementById('filter-currency').value = '';
+          renderItemsList();
+        });
+
+        // Locations View Actions
+        document.getElementById('btn-toggle-add-loc').addEventListener('click', () => {
+          document.getElementById('location-form').classList.toggle('hidden');
+        });
+
+        document.getElementById('location-form').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const name = document.getElementById('new-loc-name').value.trim();
+          if (!name) return;
+          rememberLocation({
+            name,
+            address: document.getElementById('new-loc-address').value.trim(),
+            defaultCurrency: document.getElementById('new-loc-currency').value,
+            defaultTax: document.getElementById('new-loc-tax').value,
+            lat: document.getElementById('new-loc-lat').value.trim(),
+            lng: document.getElementById('new-loc-lng').value.trim()
+          });
+          persistState();
+          e.target.reset();
+          document.getElementById('new-loc-tax').value = '10';
+          document.getElementById('location-form').classList.add('hidden');
+          renderAll();
+          showToast('已新增記憶地點：' + name);
+        });
+
+        document.getElementById('locations-grid').addEventListener('click', (e) => {
+          const shopBtn = e.target.closest('[data-shop-here]');
+          if (shopBtn) {
+            switchTab('record');
+            applyLocationToForm(shopBtn.dataset.shopHere);
+            document.getElementById('input-name').focus();
+            return;
+          }
+          const viewBtn = e.target.closest('[data-view-loc-items]');
+          if (viewBtn) {
+            state.filters.location = viewBtn.dataset.viewLocItems;
+            switchTab('record');
+            document.getElementById('filter-location').value = state.filters.location;
+            renderItemsList();
+            return;
+          }
+          const delBtn = e.target.closest('[data-delete-loc]');
+          if (delBtn) {
+            const id = delBtn.dataset.deleteLoc;
+            const loc = state.locations.find(l => l.id === id);
+            openConfirmModal('移除記憶地點', '確定要從地點記憶庫移除「' + (loc ? loc.name : '') + '」嗎？（不會刪除已紀錄的商品）', () => {
+              state.locations = state.locations.filter(l => l.id !== id);
+              persistState();
+              renderAll();
+              showToast('已移除記憶地點', 'info');
+            });
+          }
+        });
+
+        // Clear sample banner
+        document.getElementById('btn-clear-samples').addEventListener('click', () => {
+          state.items = state.items.filter(i => !i.isSample);
+          state.locations = state.locations.filter(l => !l.isSample);
+          persistState();
+          renderAll();
+          showToast('已清除範例資料，可以開始紀錄您的代購商品！');
+        });
+
+        // Export / Import / Clear All
+        document.getElementById('btn-export-csv').addEventListener('click', exportCSV);
+        document.getElementById('btn-export-json').addEventListener('click', exportJSON);
+
+        document.getElementById('input-import-json').addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            try {
+              const data = JSON.parse(ev.target.result);
+              if (Array.isArray(data.items)) state.items = data.items;
+              if (Array.isArray(data.locations)) state.locations = data.locations;
+              if (data.rates && typeof data.rates === 'object') state.rates = Object.assign(state.rates, data.rates);
+              persistState();
+              renderAll();
+              showToast('已成功匯入備份資料！');
+            } catch (err) {
+              showToast('匯入失敗：JSON 格式不正確', 'error');
+            }
+          };
+          reader.readAsText(file);
+          e.target.value = '';
+        });
+
+        document.getElementById('btn-clear-all').addEventListener('click', () => {
+          openConfirmModal('清空所有資料', '確定要清空所有採買紀錄與已記憶地點嗎？此動作無法復原，建議先匯出備份。', () => {
+            state.items = [];
+            state.locations = [];
+            persistState();
+            renderAll();
+            showToast('已清空所有資料', 'info');
+          });
+        });
+
+        // Barcode Camera & Photo Recognition
+        let html5QrInstance = null;
+        let activeFacingMode = 'environment';
+        let isScannerRunning = false;
+
+        function playScanBeep() {
+          try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1046.5, ctx.currentTime);
+            gain.gain.setValueAtTime(0.08, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.15);
+          } catch (e) {
+            // Ignore audio restrictions
+          }
+        }
+
+        function applyScannedBarcode(decodedText) {
+          const clean = String(decodedText || '').trim();
+          if (!clean) return;
+          document.getElementById('input-barcode').value = clean;
+          updateBarcodeBadge();
+          playScanBeep();
+          showToast('掃描成功！已填入國際編碼：' + clean);
+          document.getElementById('input-price').focus();
+        }
+
+        function getSupportedFormats() {
+          if (typeof Html5QrcodeSupportedFormats === 'undefined') return undefined;
+          return [
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.ITF,
+            Html5QrcodeSupportedFormats.QR_CODE
+          ];
+        }
+
+        function stopCameraScanner() {
+          const p = (html5QrInstance && isScannerRunning)
+            ? html5QrInstance.stop().catch(() => {})
+            : Promise.resolve();
+          return p.then(() => {
+            isScannerRunning = false;
+            if (html5QrInstance) {
+              try { html5QrInstance.clear(); } catch (e) {}
+            }
+          });
+        }
+
+        function closeScannerModal() {
+          stopCameraScanner();
+          const modal = document.getElementById('scanner-modal');
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        }
+
+        function startCameraScanner(facingMode) {
+          const statusEl = document.getElementById('scanner-status');
+          const overlay = document.getElementById('scanner-fallback-overlay');
+          const errDetail = document.getElementById('scanner-error-detail');
+          overlay.classList.add('hidden');
+          statusEl.textContent = '正在啟動' + (facingMode === 'environment' ? '後置' : '前置') + '鏡頭...';
+
+          if (typeof Html5Qrcode === 'undefined') {
+            overlay.classList.remove('hidden');
+            errDetail.textContent = '條碼掃描模組尚未載入完成，請確認網路連線或改用「拍照／上傳條碼圖片」。';
+            statusEl.textContent = '掃描模組未載入';
+            return;
+          }
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            overlay.classList.remove('hidden');
+            errDetail.textContent = '此瀏覽器環境不支援即時鏡頭存取，請點擊下方按鈕改用「拍照／上傳條碼圖片」辨識。';
+            statusEl.textContent = '不支援即時鏡頭，請改用拍圖辨識';
+            return;
+          }
+
+          stopCameraScanner().then(() => {
+            const formats = getSupportedFormats();
+            html5QrInstance = new Html5Qrcode('barcode-reader', formats ? { formatsToSupport: formats, verbose: false } : false);
+            const config = {
+              fps: 10,
+              qrbox: function (viewfinderWidth, viewfinderHeight) {
+                const w = Math.min(280, Math.floor(viewfinderWidth * 0.85));
+                const h = Math.min(140, Math.floor(viewfinderHeight * 0.45));
+                return { width: Math.max(160, w), height: Math.max(90, h) };
+              }
+            };
+            html5QrInstance.start(
+              { facingMode: facingMode },
+              config,
+              (decodedText) => {
+                closeScannerModal();
+                applyScannedBarcode(decodedText);
+              },
+              () => {
+                // Frame without barcode — ignore
+              }
+            ).then(() => {
+              isScannerRunning = true;
+              statusEl.textContent = '請將商品條碼水平對準鏡頭中央框內';
+            }).catch((err) => {
+              isScannerRunning = false;
+              overlay.classList.remove('hidden');
+              const msg = (err && err.message) ? err.message : String(err || '');
+              if (/Permission|NotAllowed/i.test(msg)) {
+                errDetail.textContent = '未取得相機權限（或在預覽視窗中被限制）。您可直接點下方「拍照／上傳條碼圖片」來辨識條碼。';
+              } else {
+                errDetail.textContent = '無法啟動鏡頭（需在 HTTPS 網頁環境與實體鏡頭裝置上使用）。請改用「拍照／上傳條碼圖片」辨識。';
+              }
+              statusEl.textContent = '鏡頭啟動失敗，可改用拍圖辨識';
+            });
+          });
+        }
+
+        function decodeBarcodeFromFile(file) {
+          if (!file) return;
+          showToast('正在辨識條碼圖片...', 'info');
+
+          const tryNativeDetector = () => {
+            if (typeof window.BarcodeDetector === 'undefined') {
+              showToast('無法從圖片辨識到清晰條碼，請對焦近拍條碼後再試', 'error');
+              return;
+            }
+            const img = new Image();
+            const objUrl = URL.createObjectURL(file);
+            img.onload = () => {
+              const detector = new window.BarcodeDetector({
+                formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'itf', 'qr_code']
+              });
+              detector.detect(img).then((codes) => {
+                URL.revokeObjectURL(objUrl);
+                if (codes && codes.length > 0 && codes[0].rawValue) {
+                  closeScannerModal();
+                  applyScannedBarcode(codes[0].rawValue);
+                } else {
+                  showToast('未能辨識出條碼，請確認圖片清晰且條碼完整', 'error');
+                }
+              }).catch(() => {
+                URL.revokeObjectURL(objUrl);
+                showToast('圖片條碼辨識失敗，請重新拍攝或手動輸入', 'error');
+              });
+            };
+            img.onerror = () => {
+              URL.revokeObjectURL(objUrl);
+              showToast('無法讀取選擇的圖片檔案', 'error');
+            };
+            img.src = objUrl;
+          };
+
+          if (typeof Html5Qrcode !== 'undefined') {
+            const formats = getSupportedFormats();
+            const fileScanner = new Html5Qrcode('barcode-file-reader', formats ? { formatsToSupport: formats, verbose: false } : false);
+            fileScanner.scanFile(file, false).then((decodedText) => {
+              try { fileScanner.clear(); } catch (e) {}
+              closeScannerModal();
+              applyScannedBarcode(decodedText);
+            }).catch(() => {
+              try { fileScanner.clear(); } catch (e) {}
+              tryNativeDetector();
+            });
+          } else {
+            tryNativeDetector();
+          }
+        }
+
+        document.getElementById('btn-open-scanner').addEventListener('click', () => {
+          const modal = document.getElementById('scanner-modal');
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+          lucide.createIcons();
+          startCameraScanner(activeFacingMode);
+        });
+
+        document.getElementById('btn-scan-photo').addEventListener('click', () => {
+          document.getElementById('input-barcode-photo').click();
+        });
+
+        document.getElementById('btn-modal-upload-photo').addEventListener('click', () => {
+          document.getElementById('input-barcode-photo').click();
+        });
+
+        document.getElementById('input-barcode-photo').addEventListener('change', (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (file) decodeBarcodeFromFile(file);
+          e.target.value = '';
+        });
+
+        document.getElementById('btn-switch-camera').addEventListener('click', () => {
+          activeFacingMode = activeFacingMode === 'environment' ? 'user' : 'environment';
+          startCameraScanner(activeFacingMode);
+        });
+
+        document.getElementById('btn-close-scanner').addEventListener('click', closeScannerModal);
+        document.getElementById('btn-close-scanner-x').addEventListener('click', closeScannerModal);
+        document.getElementById('scanner-modal').addEventListener('click', (e) => {
+          if (e.target.id === 'scanner-modal') closeScannerModal();
+        });
+
+        // Modal controls
+        document.getElementById('modal-cancel').addEventListener('click', closeConfirmModal);
+        document.getElementById('modal-confirm').addEventListener('click', () => {
+          if (typeof state.pendingConfirmAction === 'function') {
+            state.pendingConfirmAction();
+          }
+          closeConfirmModal();
+        });
+        document.getElementById('confirm-modal').addEventListener('click', (e) => {
+          if (e.target.id === 'confirm-modal') closeConfirmModal();
+        });
+      }
+
+      // PWA Install Prompt (activates automatically when hosted over HTTPS)
+      let deferredInstallPrompt = null;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        const btn = document.getElementById('btn-install-pwa');
+        if (btn) {
+          btn.classList.remove('hidden');
+          btn.classList.add('inline-flex');
+        }
+      });
+      window.addEventListener('appinstalled', () => {
+        deferredInstallPrompt = null;
+        const btn = document.getElementById('btn-install-pwa');
+        if (btn) {
+          btn.classList.add('hidden');
+          btn.classList.remove('inline-flex');
+        }
+        showToast('已成功安裝「代購採買記帳本」到主畫面！');
+      });
+      const installBtnEl = document.getElementById('btn-install-pwa');
+      if (installBtnEl) {
+        installBtnEl.addEventListener('click', () => {
+          if (!deferredInstallPrompt) return;
+          deferredInstallPrompt.prompt();
+          deferredInstallPrompt.userChoice.then(() => {
+            deferredInstallPrompt = null;
+            installBtnEl.classList.add('hidden');
+            installBtnEl.classList.remove('inline-flex');
+          });
+        });
+      }
+
+      // Register Service Worker for standalone PWA installation
+      if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch(() => {});
+        });
+      }
+
+      // Initialize
+      initState();
+      bindEvents();
+      document.getElementById('input-rate').value = state.rates.JPY || CURRENCY_META.JPY.defaultRate;
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
